@@ -1,10 +1,8 @@
-from typing import Any
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from json import dumps
-from typing import Literal, Optional
-from py_order_utils.model import (
-    SignedOrder,
-)
+from typing import Any, Literal, Optional
+
+from py_order_utils.model import SignedOrder
 
 from .constants import ZERO_ADDRESS
 
@@ -247,3 +245,41 @@ class ContractConfig:
 class PostOrdersArgs:
     order: SignedOrder
     orderType: OrderType = OrderType.GTC
+
+
+@dataclass
+class ProxyConfig:
+    """
+    Proxy configuration for HTTP requests
+    """
+
+    http: Optional[str] = None
+    """
+    HTTP proxy URL (e.g., 'http://proxy.example.com:8080')
+    """
+
+    https: Optional[str] = None
+    """
+    HTTPS proxy URL (e.g., 'https://proxy.example.com:8080')
+    """
+
+    proxy: Optional[str] = None
+    """
+    Proxy URL without protocol (e.g., 'proxy.example.com:8080')
+    """
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary format expected by requests library"""
+
+        if self.proxy:
+            return {
+                "http": f"http://{self.proxy}",
+                "https": f"http://{self.proxy}",
+            }
+        else:
+            proxy_dict = {}
+            if self.http:
+                proxy_dict["http"] = self.http
+            if self.https:
+                proxy_dict["https"] = self.https
+            return proxy_dict
