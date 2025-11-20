@@ -1,12 +1,12 @@
 import httpx
 
 from py_clob_client.clob_types import (
-    DropNotificationParams,
     BalanceAllowanceParams,
+    DropNotificationParams,
+    OpenOrderParams,
     OrderScoringParams,
     OrdersScoringParams,
     TradeParams,
-    OpenOrderParams,
 )
 
 from ..exceptions import PolyApiException
@@ -16,33 +16,43 @@ POST = "POST"
 DELETE = "DELETE"
 PUT = "PUT"
 
-_http_client = httpx.Client(http2=True)
-
 
 def overloadHeaders(method: str, headers: dict) -> dict:
     if headers is None:
         headers = dict()
-    headers["User-Agent"] = "py_clob_client"
 
-    headers["Accept"] = "*/*"
-    headers["Connection"] = "keep-alive"
-    headers["Content-Type"] = "application/json"
+    if "User-Agent" not in headers:
+        headers["User-Agent"] = "py_clob_client"
 
-    if method == GET:
+    if "Accept" not in headers:
+        headers["Accept"] = "*/*"
+
+    if "Connection" not in headers:
+        headers["Connection"] = "keep-alive"
+
+    if "Content-Type" not in headers:
+        headers["Content-Type"] = "application/json"
+
+    if "Accept-Encoding" not in headers and method == GET:
         headers["Accept-Encoding"] = "gzip"
 
     return headers
 
 
-def request(endpoint: str, method: str, headers=None, data=None):
+def request(endpoint: str, method: str, headers=None, data=None, proxy=None):
     try:
         headers = overloadHeaders(method, headers)
-        resp = _http_client.request(
-            method=method,
-            url=endpoint,
-            headers=headers,
-            json=data if data else None,
-        )
+
+        client = httpx.Client(http2=True, proxy=proxy)
+        try:
+            resp = client.request(
+                method=method,
+                url=endpoint,
+                headers=headers,
+                json=data if data else None,
+            )
+        finally:
+            client.close()
 
         if resp.status_code != 200:
             raise PolyApiException(resp)
@@ -56,16 +66,16 @@ def request(endpoint: str, method: str, headers=None, data=None):
         raise PolyApiException(error_msg="Request exception!")
 
 
-def post(endpoint, headers=None, data=None):
-    return request(endpoint, POST, headers, data)
+def post(endpoint, headers=None, data=None, proxy=None):
+    return request(endpoint, POST, headers, data, proxy)
 
 
-def get(endpoint, headers=None, data=None):
-    return request(endpoint, GET, headers, data)
+def get(endpoint, headers=None, data=None, proxy=None):
+    return request(endpoint, GET, headers, data, proxy)
 
 
-def delete(endpoint, headers=None, data=None):
-    return request(endpoint, DELETE, headers, data)
+def delete(endpoint, headers=None, data=None, proxy=None):
+    return request(endpoint, DELETE, headers, data, proxy)
 
 
 def build_query_params(url: str, param: str, val: str) -> str:
