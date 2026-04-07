@@ -255,3 +255,40 @@ class PostOrdersArgs:
     order: SignedOrder
     orderType: OrderType = OrderType.GTC
     postOnly: bool = False
+
+
+@dataclass
+class ProxyConfig:
+    """
+    Proxy configuration for HTTP requests
+    """
+
+    http: Optional[str] = None
+    """
+    HTTP proxy URL (e.g., 'http://proxy.example.com:8080')
+    """
+
+    https: Optional[str] = None
+    """
+    HTTPS proxy URL (e.g., 'https://proxy.example.com:8080')
+    """
+
+    proxy: Optional[str] = None
+    """
+    Proxy URL without protocol (e.g., 'proxy.example.com:8080')
+    """
+
+    def get(self) -> Optional[str]:
+        """Convert to proxy string"""
+
+        if self.proxy:
+            return f"http://{self.proxy}"
+
+        if self.http:
+            return self.http
+
+        if self.https:
+            return self.https
+
+        return None
+
